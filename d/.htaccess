@@ -1,0 +1,8 @@
+# ShadowSign delivery directory
+DirectoryIndex index.php
+Options -Indexes
+
+# Route all requests through index.php (our get.php/index.php)
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L]
