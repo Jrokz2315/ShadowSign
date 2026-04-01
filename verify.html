@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShadowSign · Verify Attribution</title>
+<meta name="description" content="Verify the attribution of a ShadowSign-stamped document.">
+<style>
+  :root {
+    --bg:    #07090f;
+    --g1:    #0d1117;
+    --g2:    #131820;
+    --ln:    rgba(255,255,255,.07);
+    --snow:  #e8edf5;
+    --ms:    #7a8fa8;
+    --az:    #4f8eff;
+    --rs:    #ff5e7e;
+    --gd:    #f5b731;
+    --jd:    #00d9a0;
+    --r:     12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--snow);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 32px;
+    text-decoration: none;
+    color: var(--snow);
+  }
+  .logo-seal { font-size: 28px; }
+  .logo-name {
+    font-family: 'Geist Mono', 'Courier New', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .card {
+    background: var(--g1);
+    border: 1px solid var(--ln);
+    border-radius: var(--r);
+    width: 100%;
+    max-width: 480px;
+    padding: 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ms);
+    margin-bottom: 20px;
+  }
+  /* Attribution states */
+  .attr-full {
+    background: rgba(255,94,126,.07);
+    border: 1.5px solid rgba(255,94,126,.3);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .attr-partial {
+    background: rgba(79,142,255,.07);
+    border: 1.5px solid rgba(79,142,255,.25);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+  .attr-none {
+    background: rgba(245,183,49,.06);
+    border: 1px solid rgba(245,183,49,.2);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 12px;
+    color: var(--gd);
+  }
+  .attr-label {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .attr-label.full  { color: var(--rs); }
+  .attr-label.part  { color: var(--az); }
+  .attr-name {
+    font-size: 26px;
+    font-style: italic;
+    color: var(--snow);
+    line-height: 1.2;
+    margin-bottom: 6px;
+  }
+  .attr-mono {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: var(--ms);
+    margin-bottom: 3px;
+    word-break: break-all;
+  }
+  .attr-note {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    color: var(--ms);
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,.07);
+    line-height: 1.6;
+  }
+  .row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--ln);
+    gap: 12px;
+  }
+  .row:last-child { border-bottom: none; }
+  .rk {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    color: var(--ms);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    flex-shrink: 0;
+  }
+  .rv {
+    font-family: 'Geist Mono', monospace;
+    font-size: 11px;
+    color: var(--snow);
+    text-align: right;
+    word-break: break-all;
+  }
+  .cta {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .btn {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+  }
+  .btn-p {
+    background: linear-gradient(135deg, #4f8eff, #7c5cfc);
+    color: #fff;
+  }
+  .btn-g {
+    background: var(--g2);
+    color: var(--ms);
+    border: 1px solid var(--ln);
+  }
+  .divider {
+    font-family: 'Geist Mono', monospace;
+    font-size: 9px;
+    color: var(--ms);
+    text-align: center;
+    letter-spacing: 1px;
+    margin: 4px 0;
+  }
+  .note-box {
+    background: rgba(79,142,255,.06);
+    border: 1px solid rgba(79,142,255,.15);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'Geist Mono', monospace;
+    font-size: 10px;
+    color: var(--ms);
+    line-height: 1.7;
+    margin-top: 4px;
+  }
+  #loading {
+    font-family: 'Geist Mono', monospace;
+    font-size: 12px;
+    color: var(--ms);
+    margin-top: 40px;
+  }
+</style>
+</head>
+<body>
+
+<a class="logo" href="/">
+  <span class="logo-seal">🔐</span>
+  <span class="logo-name">ShadowSign</span>
+</a>
+
+<div id="loading">Reading attribution data…</div>
+<div id="root" style="display:none;width:100%;max-width:480px"></div>
+
+<script>
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function render(h, fp, r, ts) {
+  const root = document.getElementById('root');
+  root.style.display = 'block';
+  document.getElementById('loading').style.display = 'none';
+
+  let attrHtml = '';
+
+  if (r) {
+    // Full attribution — name recovered
+    attrHtml = `
+      <div class="attr-full">
+        <div class="attr-label full">🎯 Recipient Attribution</div>
+        <div class="attr-name">${esc(r)}</div>
+        ${ts ? `<div class="attr-mono">Stamped: ${esc(ts.slice(0,10))}</div>` : ''}
+        <div class="attr-note">
+          This document was stamped for the recipient above.<br>
+          Drop the original file into the Verify tab to fully confirm the cryptographic signature.
+        </div>
+      </div>`;
+  } else if (h) {
+    // Partial — HMAC only
+    attrHtml = `
+      <div class="attr-partial">
+        <div class="attr-label part">🔏 Partial Attribution</div>
+        <div class="attr-mono">HMAC · ${esc(h.toUpperCase())}…</div>
+        ${fp ? `<div class="attr-mono">Sender FP · ${esc(fp.toUpperCase())}…</div>` : ''}
+        <div class="attr-note">
+          A ShadowSign fingerprint was detected. Recipient name is not available
+          from the QR code alone — drop the original file into the Verify tab
+          to recover full attribution.
+        </div>
+      </div>`;
+  } else {
+    attrHtml = `<div class="attr-none">⚠️ No attribution data found in this QR code.</div>`;
+  }
+
+  // Build rows for detail table
+  const rows = [];
+  if (h)  rows.push(['HMAC (partial)', h.toUpperCase() + '…']);
+  if (fp) rows.push(['Sender FP (partial)', fp.toUpperCase() + '…']);
+  if (ts) rows.push(['Timestamp', ts]);
+
+  const rowsHtml = rows.map(([k,v]) =>
+    `<div class="row"><span class="rk">${esc(k)}</span><span class="rv">${esc(v)}</span></div>`
+  ).join('');
+
+  // Build verify URL for the main app — pass hash params through
+  const verifyParams = new URLSearchParams({ verify:'1', h:h||'', fp:fp||'', r:r||'', ts:ts||'', v:'1' });
+  const verifyUrl = '/#' + verifyParams.toString();
+  const uploadUrl = '/';
+
+  root.innerHTML = `
+    <div class="card">
+      <div class="card-title">🔍 QR Scan Result</div>
+      ${attrHtml}
+      ${rowsHtml ? `<div style="margin-top:20px">${rowsHtml}</div>` : ''}
+    </div>
+
+    <div class="card">
+      <div class="card-title">Next steps</div>
+      <div class="cta">
+        <a class="btn btn-p" href="${verifyUrl}">
+          Open in ShadowSign → Verify Tab
+        </a>
+        <div class="divider">— or —</div>
+        <a class="btn btn-g" href="${uploadUrl}">
+          Go to ShadowSign
+        </a>
+      </div>
+      <div class="note-box" style="margin-top:14px">
+        To fully verify this document, drop the original signed file into the
+        <strong style="color:#e8edf5">Verify tab</strong> in ShadowSign.
+        The QR code carries partial attribution only — the full HMAC,
+        certificate, and recipient data are embedded inside the file itself.
+      </div>
+    </div>
+  `;
+}
+
+// Read params from hash or query string (support both for flexibility)
+function init() {
+  let qp;
+  const hash = window.location.hash.slice(1);
+  if (hash && hash.includes('verify')) {
+    qp = new URLSearchParams(hash);
+  } else {
+    qp = new URLSearchParams(window.location.search);
+  }
+
+  const h  = qp.get('h')  || '';
+  const fp = qp.get('fp') || '';
+  const r  = qp.get('r')  || '';
+  const ts = qp.get('ts') || '';
+
+  render(h, fp, r, ts);
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
